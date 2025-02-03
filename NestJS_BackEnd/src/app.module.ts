@@ -8,6 +8,7 @@ import { Database } from './db/database.module';
 import { EmailService } from './email/email.service';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { UserModule } from './user/user.module';
+import { DestinationModule } from './destination/destination.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -18,6 +19,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     UserModule,
     BookingModule,
+    DestinationModule,
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtAuthGuard],
