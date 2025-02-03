@@ -16,13 +16,15 @@ export class EmailService {
   }
 
   // Method to send email
-  async sendEmail(to: string, subject: string, text: string) {
+  // Updated sendEmail method with HTML support
+  async sendEmail(to: string, subject: string, text: string, html: string) {
     try {
       const info = await this.transporter.sendMail({
         from: '"Travel Management Suite" <saturazoanasultana@gmail.com>', // sender address
-        to: to, // list of receivers
-        subject: subject, // Subject line
-        text: text, // plain text body
+        to: to, // recipient address
+        subject: subject, // subject of the email
+        text: text, // plain text version (for non-HTML clients)
+        html: html, // HTML version of the email
       });
 
       console.log('Message sent: %s', info.messageId);

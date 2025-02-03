@@ -42,24 +42,70 @@ export class AuthService {
   }
 
   // Signin Method
+  // async signIn(loginDto: LoginDto) {
+  //   const { email, password } = loginDto;
+
+  //   const user = await this.userRepository.findOne({ where: { email } });
+
+  //   if (!user) {
+  //     throw new UnauthorizedException('Invalid credentials');
+  //   }
+
+  //   const isPasswordValid = await bcrypt.compare(password, user.password);
+  //   if (!isPasswordValid) {
+  //     throw new UnauthorizedException('Invalid credentials');
+  //   }
+
+  //   const payload = { sub: user.id, email: user.email };
+  //   const token = this.jwtService.sign(payload);
+
+  //   return { access_token: token };
+  // }
   async signIn(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where: { email } });
+    // Find user by email
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['bookings'], // You can include related entities, like bookings
+    });
 
+    // If user doesn't exist, throw an Unauthorized exception
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Validate the provided password with the stored hash
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Create the payload to include in the JWT token
     const payload = { sub: user.id, email: user.email };
+
+    // Generate the token using the JWT service
     const token = this.jwtService.sign(payload);
 
-    return { access_token: token };
+    // Return user information along with the access token
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone_no: user.phone_no,
+        address: user.address,
+        dob: user.dob,
+        gender: user.gender,
+        nid_no: user.nid_no,
+        nid_pic_path: user.nid_pic_path,
+        profile_pic_path: user.profile_pic_path,
+        description: user.description,
+        user_type: user.user_type,
+        bookings: user.bookings, // Include the bookings information if needed
+      },
+    };
   }
 
   // Forgot Password Method (generate reset token)
@@ -76,12 +122,84 @@ export class AuthService {
       { email: user.email },
       { expiresIn: '1h' },
     );
-    await this.emailService.sendEmail(
-      user.email,
-      'Password Reset Request',
-      `Use this token to reset your password: ${resetToken}`,
-    );
 
+    await this.emailService.sendEmail(
+      user.email, // recipient email
+      'Password Reset Request', // subject line
+      ``, // plain text content
+      `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset Request</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            text-align: center;
+            color: #333;
+          }
+          .message {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+          }
+          .button-container {
+            text-align: center;
+            margin-top: 20px;
+          }
+          .button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 12px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+          }
+          .button:hover {
+            background-color: #45a049;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Password Reset Request</h2>
+          </div>
+          <div class="message">
+            <p>Hi,</p>
+            <p>You requested to reset your password. Please use the following token to reset your password:</p>
+            <p><strong>${resetToken}</strong></p>
+            <p>If you didn't request this, please ignore this email.</p>
+          </div>
+      
+          <div class="button-container">
+            <a href="http://localhost:3000/reset-password?token=${resetToken}" class="button">Change Password</a>
+          </div>
+      
+          <p style="text-align: center; font-size: 14px; color: #777;">If you have any issues, please contact our support team.</p>
+        </div>
+      </body>
+      </html>
+      `, // HTML content
+    );
     return {
       message: 'Password reset token sent to mail',
       reset_token: resetToken,

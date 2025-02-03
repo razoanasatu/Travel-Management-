@@ -14,6 +14,10 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(15)
   phone_no?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(15)
+  password?: string;
 
   @IsOptional()
   @IsString()

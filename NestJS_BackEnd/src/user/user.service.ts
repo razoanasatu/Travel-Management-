@@ -141,6 +141,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Repository } from 'typeorm';
@@ -165,12 +166,40 @@ export class UserService {
     return this.findUserById(userId);
   }
 
+  // async updateUserProfile(userId: number, updateProfileDto: UpdateProfileDto) {
+  //   const user = await this.findUserById(userId);
+
+  //   // Explicitly prevent the `email` field from being updated
+  //   if ('email' in updateProfileDto) {
+  //     throw new BadRequestException('Email update is not allowed.');
+  //   }
+
+  //   // Update the user with the allowed fields only
+  //   await this.userRepository.update(userId, updateProfileDto);
+
+  //   // Fetch the updated user (if needed) to return the latest details
+  //   const updatedUser = await this.findUserById(userId);
+
+  //   return {
+  //     message: 'Profile updated successfully',
+  //     user: updatedUser,
+  //   };
+  // }
   async updateUserProfile(userId: number, updateProfileDto: UpdateProfileDto) {
     const user = await this.findUserById(userId);
 
     // Explicitly prevent the `email` field from being updated
     if ('email' in updateProfileDto) {
       throw new BadRequestException('Email update is not allowed.');
+    }
+
+    // Check if password is being updated
+    if (updateProfileDto.password) {
+      // Hash the new password using bcrypt
+      const hashedPassword = await bcrypt.hash(updateProfileDto.password, 10);
+
+      // Update the password field with the hashed password
+      updateProfileDto.password = hashedPassword;
     }
 
     // Update the user with the allowed fields only
